@@ -1,17 +1,20 @@
-use std::io::prelude::*;
-use std::net::{TcpListener, TcpStream};
+use std::{env, io::Read};
 
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+#[derive(Debug)]
+struct Error(String);
 
-    for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        handle_connection(&mut stream);
+impl<T: std::error::Error> From<T> for Error {
+    fn from(t: T) -> Self {
+        Error(t.to_string())
     }
 }
 
-fn handle_connection(stream: &mut TcpStream) {
-    let mut buffer = [0; 512];
-    stream.read(&mut buffer).unwrap();
-    println!("Request: {}", String::from_utf8_lossy(&buffer));
+fn main() -> Result<(), Error> {
+    let fname = env::args()
+        .skip(1)
+        .next()
+        .ok_or(Error("Usage: test <filename>".to_string()))?;
+    let mut text = String::new();
+    std::fs::File::open(fname)?.read_to_string(&mut text)?;
+    Ok(())
 }
